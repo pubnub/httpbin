@@ -15,6 +15,7 @@ import time
 import uuid
 import argparse
 
+from OpenSSL import SSL
 from flask import Flask, Response, request, render_template, redirect, jsonify as flask_jsonify, make_response, url_for
 from werkzeug.datastructures import WWWAuthenticate, MultiDict
 from werkzeug.http import http_date
@@ -25,6 +26,7 @@ from . import filters
 from .helpers import get_headers, status_code, get_dict, get_request_range, check_basic_auth, check_digest_auth, secure_cookie, H, ROBOT_TXT, ANGRY_ASCII
 from .utils import weighted_choice
 from .structures import CaseInsensitiveDict
+
 
 ENV_COOKIES = (
     '_gauges_unique',
@@ -724,5 +726,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=5000)
     parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--ssl-key", default=None)
+    parser.add_argument("--ssl-crt", default=None)
     args = parser.parse_args()
-    app.run(port=args.port, host=args.host)
+
+    ssl_context = None
+    if args.ssl_key != None and args.ssl_crt != None:
+        ssl_context = SSL.Context(SSL.SSLv23_METHOD)
+        ssl_context.use_privatekey_file(args.ssl_key)
+        ssl_context.use_certificate_file(args.ssl_crt)
+
+    app.run(port=args.port, host=args.host, ssl_context=ssl_context)
